@@ -1,0 +1,62 @@
+import requests
+import pandas as pd
+
+url = "https://restcountries.com/v3.1/all"
+
+data = None # Initialize data to None
+
+try:
+    response = requests.get(url)
+
+    print("Status Code:", response.status_code)
+
+    if response.status_code == 200:
+        data = response.json()
+        print("Total number of countries retrieved:", len(data))
+    else:
+        print("Error: Failed to fetch data from API. Status Code:", response.status_code)
+
+except Exception as e:
+    print("Exception occurred:", str(e))
+
+# Only proceed if data was successfully retrieved
+if data is not None:
+    # Extract required fields
+    country_list = []
+
+    for country in data:
+        name = country.get("name", {}).get("common", "N/A")
+        population = country.get("population", 0)
+        region = country.get("region", "N/A")
+        area = country.get("area", 0)
+
+        country_list.append({
+            "common_name": name,
+            "population": population,
+            "region": region,
+            "area": area
+        })
+
+    # Create DataFrame
+    df = pd.DataFrame(country_list)
+
+    # Display first 10 rows
+    print(df.head(10))
+
+    # 1. Region with highest total population
+    region_population = df.groupby("region")["population"].sum()
+    highest_population_region = region_population.idxmax()
+    highest_population_value = region_population.max()
+
+    # 2. Country with largest area
+    largest_country = df.loc[df["area"].idxmax()]
+
+    # Print results
+    print("\nSummary Results:")
+    print("Region with highest total population:", highest_population_region)
+    print("Total population:", highest_population_value)
+
+    print("\nCountry with largest area:", largest_country["common_name"])
+    print("Area:", largest_country["area"])
+else:
+    print("Data could not be retrieved, skipping DataFrame creation and analysis.")
